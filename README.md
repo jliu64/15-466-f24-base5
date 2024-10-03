@@ -1,8 +1,8 @@
-# (TODO: your game's title)
+# Cylindrical Terrain
 
-Author: (TODO: your name)
+Author: Jesse Liu
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: A walking simulator inside a cylindrical walkmesh. There's some basic terrain inside the cylinder (more interesting terrain like plants proved too time-consuming to pull off), and there are three coins to collect, after which you win the game.
 
 Screen Shot:
 
@@ -10,9 +10,9 @@ Screen Shot:
 
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
+Click to lock the mouse into the game. WASD to move around. ESC to unlock the mouse again. You pretty much just walk around, although there are three coins you can collect if you want to win.
 
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+Sources: Sound assets were created on https://jfxr.frozenfractal.com/.
 
 This game was built with [NEST](NEST.md).
 

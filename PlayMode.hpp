@@ -2,6 +2,7 @@
 
 #include "Scene.hpp"
 #include "WalkMesh.hpp"
+#include "Sound.hpp"
 
 #include <glm/glm.hpp>
 
@@ -27,6 +28,17 @@ struct PlayMode : Mode {
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
+
+	Scene::Transform *coin_1 = nullptr;
+	Scene::Transform *coin_2 = nullptr;
+	Scene::Transform *coin_3 = nullptr;
+
+	//game state trackers
+	uint8_t coins = 0;
+	uint8_t coin_1_picked = 0;
+	uint8_t coin_2_picked = 0;
+	uint8_t coin_3_picked = 0;
+	uint8_t game_over = 0;
 
 	//player info:
 	struct Player {

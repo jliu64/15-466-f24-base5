@@ -13,23 +13,23 @@
 
 #include <random>
 
-GLuint phonebank_meshes_for_lit_color_texture_program = 0;
-Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("phone-bank.pnct"));
-	phonebank_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+GLuint map_meshes_for_lit_color_texture_program = 0;
+Load< MeshBuffer > map_meshes(LoadTagDefault, []() -> MeshBuffer const * {
+	MeshBuffer const *ret = new MeshBuffer(data_path("map.pnct"));
+	map_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
-Load< Scene > phonebank_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("phone-bank.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-		Mesh const &mesh = phonebank_meshes->lookup(mesh_name);
+Load< Scene > map_scene(LoadTagDefault, []() -> Scene const * {
+	return new Scene(data_path("map.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+		Mesh const &mesh = map_meshes->lookup(mesh_name);
 
 		scene.drawables.emplace_back(transform);
 		Scene::Drawable &drawable = scene.drawables.back();
 
 		drawable.pipeline = lit_color_texture_program_pipeline;
 
-		drawable.pipeline.vao = phonebank_meshes_for_lit_color_texture_program;
+		drawable.pipeline.vao = map_meshes_for_lit_color_texture_program;
 		drawable.pipeline.type = mesh.type;
 		drawable.pipeline.start = mesh.start;
 		drawable.pipeline.count = mesh.count;
@@ -38,13 +38,28 @@ Load< Scene > phonebank_scene(LoadTagDefault, []() -> Scene const * {
 });
 
 WalkMesh const *walkmesh = nullptr;
-Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
-	WalkMeshes *ret = new WalkMeshes(data_path("phone-bank.w"));
+Load< WalkMeshes > map_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
+	WalkMeshes *ret = new WalkMeshes(data_path("map.w"));
 	walkmesh = &ret->lookup("WalkMesh");
 	return ret;
 });
 
-PlayMode::PlayMode() : scene(*phonebank_scene) {
+Load<Sound::Sample> pickup_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("pickup.wav"));
+});
+
+Load<Sound::Sample> win_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("win.wav"));
+});
+
+PlayMode::PlayMode() : scene(*map_scene) {
+	for (auto &transform : scene.transforms) {
+		if (transform.name == "Coin") coin_1 = &transform;
+		else if (transform.name == "Coin.001") coin_2 = &transform;
+		else if (transform.name == "Coin.002") coin_3 = &transform;
+		else continue;
+	}
+
 	//create a player transform:
 	scene.transforms.emplace_back();
 	player.transform = &scene.transforms.back();
@@ -65,7 +80,6 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 
 	//start player walking at nearest walk point:
 	player.at = walkmesh->nearest_walk_point(player.transform->position);
-
 }
 
 PlayMode::~PlayMode() {
@@ -137,10 +151,42 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	//check for game over
+	if (game_over) return;
+
+	//check for coin collisions
+	if ((! coin_1_picked) && std::abs(player.transform->position.x - coin_1->position.x) <= 1.5f && std::abs(player.transform->position.y - coin_1->position.y) <= 1.5f 
+		&& std::abs(player.transform->position.z - coin_1->position.z) <= 1.5f) {
+		coin_1_picked = true;
+		coins += 1;
+		coin_1->position.z = -100.0f;
+		Sound::play(*pickup_sample);
+	}
+	if ((! coin_2_picked) && std::abs(player.transform->position.x - coin_2->position.x) <= 1.5f && std::abs(player.transform->position.y - coin_2->position.y) <= 1.5f 
+		&& std::abs(player.transform->position.z - coin_2->position.z) <= 1.5f) {
+		coin_2_picked = true;
+		coins += 1;
+		coin_2->position.z = -100.0f;
+		Sound::play(*pickup_sample);
+	}
+	if ((! coin_3_picked) && std::abs(player.transform->position.x - coin_3->position.x) <= 1.5f && std::abs(player.transform->position.y - coin_3->position.y) <= 1.5f 
+		&& std::abs(player.transform->position.z - coin_3->position.z) <= 1.5f) {
+		coin_3_picked = true;
+		coins += 1;
+		coin_3->position.z = -100.0f;
+		Sound::play(*pickup_sample);
+	}
+
+	if (coins >= 3) {
+		game_over = true;
+		std::cout << "You win!" << std::endl;
+		Sound::play(*win_sample);
+	}
+	
 	//player walking:
 	{
 		//combine inputs into a move:
-		constexpr float PlayerSpeed = 3.0f;
+		constexpr float PlayerSpeed = 10.0f;
 		glm::vec2 move = glm::vec2(0.0f);
 		if (left.pressed && !right.pressed) move.x =-1.0f;
 		if (!left.pressed && right.pressed) move.x = 1.0f;
